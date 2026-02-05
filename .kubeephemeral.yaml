@@ -1,0 +1,6 @@
+seed:
+  image: "demo-app:latest"
+  command: ["npm", "run", "seed"]
+  env:
+    - name: DATABASE_URL
+      value: "postgres://postgres:password@postgres:5432/demo"

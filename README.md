@@ -1,25 +1,35 @@
-# Demo App for KubeEphemeral Testing
+# KubeEphemeral Demo App
 
-A simple web application to test KubeEphemeral preview environments with Kubernetes manifests.
+This is a simple Node.js application with a Postgres database designed to demonstrate the **Seed Hook** feature of KubeEphemeral.
 
 ## Structure
 
-```
-k8s/
-├── deployment.yaml  # Simple nginx deployment
-└── service.yaml     # ClusterIP service
-```
+- `app/`: Source code (Node.js + Express + Postgres)
+  - `server.js`: API server
+  - `seed.js`: Database seeding script
+  - `Dockerfile`: Builds the image for both app and seeder
+- `k8s/`: Kubernetes manifests
+  - `manifests.yaml`: Deployment and Service for App and Postgres
+- `.kubeephemeral.yaml`: Configuration for the Seed Hook
 
-## Testing KubeEphemeral
+## How to use
 
-1. Push this repo to GitHub
-2. Install the KubeEphemeral GitHub App
-3. Create a Pull Request
-4. KubeEphemeral should detect the K8s manifests and deploy them!
+1. **Build the image** (if you want to run it locally):
+   ```bash
+   cd app
+   docker build -t demo-app:latest .
+   ```
 
-## Making Changes
+2. **Deploy with KubeEphemeral**:
+   - Push this directory to your Git repository.
+   - Open a Pull Request.
+   - KubeEphemeral will:
+     - Detect the manifests in `k8s/`
+     - Detect `.kubeephemeral.yaml`
+     - Deploy the app and database
+     - Run the seed job defined in `.kubeephemeral.yaml` (`npm run seed`)
 
-To test PR updates, modify `k8s/deployment.yaml`:
-- Change the replica count
-- Change the nginx image tag
-- Add environment variables
+3. **Verify**:
+   - Access the preview URL.
+   - The main page should list users seeded into the database.
+   - You can also check the seed job status in the `PreviewEnvironment` resource status.
