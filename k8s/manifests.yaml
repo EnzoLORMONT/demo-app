@@ -1,3 +1,114 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demo-app-code
+data:
+  package.json: |-
+    {
+        "name": "kubeephemeral-demo",
+        "version": "1.0.0",
+        "description": "Demo app for KubeEphemeral Seed Hook",
+        "main": "server.js",
+        "scripts": {
+            "start": "node server.js",
+            "seed": "node seed.js"
+        },
+        "dependencies": {
+            "express": "^4.18.2",
+            "pg": "^8.11.3"
+        }
+    }
+  server.js: |-
+    const express = require('express');
+    const { Client } = require('pg');
+
+    const app = express();
+    const port = process.env.PORT || 3000;
+
+    const client = new Client({
+        connectionString: process.env.DATABASE_URL
+    });
+
+    async function start() {
+        try {
+            await client.connect();
+            console.log('Connected to database');
+
+            app.get('/', async (req, res) => {
+                try {
+                    const result = await client.query('SELECT * FROM users');
+                    res.json({
+                        message: 'Hello from KubeEphemeral Demo App!',
+                        users: result.rows,
+                        pod: process.env.HOSTNAME
+                    });
+                } catch (err) {
+                    res.status(500).json({ error: err.message, hint: "Did you run the seed job?" });
+                }
+            });
+
+            app.get('/health', (req, res) => {
+                res.status(200).send('OK');
+            });
+
+            app.listen(port, () => {
+                console.log(`App listening on port ${port}`);
+            });
+        } catch (err) {
+            console.error('Failed to connect to database:', err);
+            process.exit(1);
+        }
+    }
+
+    start();
+  seed.js: |-
+    const { Client } = require('pg');
+
+    const client = new Client({
+        connectionString: process.env.DATABASE_URL
+    });
+
+    const seedData = [
+        { name: 'John Doe', email: 'john@example.com' },
+        { name: 'Jane Smith', email: 'jane@example.com' },
+        { name: 'Alice Johnson', email: 'alice@example.com' }
+    ];
+
+    async function seed() {
+        try {
+            await client.connect();
+            console.log('Connected to database for seeding...');
+
+            await client.query(`
+          CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(100),
+            email VARCHAR(100) UNIQUE
+          );
+        `);
+            console.log('Users table ensured.');
+
+            await client.query('TRUNCATE users RESTART IDENTITY;');
+            console.log('Users table cleared.');
+
+            for (const user of seedData) {
+                await client.query('INSERT INTO users (name, email) VALUES ($1, $2)', [user.name, user.email]);
+                console.log(`Inserted user: ${user.name}`);
+            }
+
+            console.log('Seeding completed successfully.');
+            process.exit(0);
+        } catch (err) {
+            console.error('Seeding failed:', err);
+            process.exit(1);
+        } finally {
+            await client.end();
+        }
+    }
+
+    seed();
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -16,13 +127,29 @@ spec:
     spec:
       containers:
       - name: demo-app
-        image: demo-app:latest
-        imagePullPolicy: IfNotPresent
+        image: node:22
+        command:
+        - /bin/sh
+        - -c
+        args:
+        - |
+          cp /src/* /app/
+          cd /app
+          npm install
+          npm start
+        workingDir: /app
+        volumeMounts:
+        - name: code
+          mountPath: /src
         ports:
         - containerPort: 3000
         env:
         - name: DATABASE_URL
           value: "postgres://postgres:password@postgres:5432/demo"
+      volumes:
+      - name: code
+        configMap:
+          name: demo-app-code
 ---
 apiVersion: v1
 kind: Service

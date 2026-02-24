@@ -4,23 +4,13 @@ This is a simple Node.js application with a Postgres database designed to demons
 
 ## Structure
 
-- `app/`: Source code (Node.js + Express + Postgres)
-  - `server.js`: API server
-  - `seed.js`: Database seeding script
-  - `Dockerfile`: Builds the image for both app and seeder
 - `k8s/`: Kubernetes manifests
-  - `manifests.yaml`: Deployment and Service for App and Postgres
+  - `manifests.yaml`: Deployment, Service, and ConfigMap (containing app source code)
 - `.kubeephemeral.yaml`: Configuration for the Seed Hook
 
 ## How to use
 
-1. **Build the image** (if you want to run it locally):
-   ```bash
-   cd app
-   docker build -t demo-app:latest .
-   ```
-
-2. **Deploy with KubeEphemeral**:
+1. **Deploy with KubeEphemeral**:
    - Push this directory to your Git repository.
    - Open a Pull Request.
    - KubeEphemeral will:
@@ -29,7 +19,7 @@ This is a simple Node.js application with a Postgres database designed to demons
      - Deploy the app and database
      - Run the seed job defined in `.kubeephemeral.yaml` (`npm run seed`)
 
-3. **Verify**:
+2. **Verify**:
    - Access the preview URL.
    - The main page should list users seeded into the database.
    - You can also check the seed job status in the `PreviewEnvironment` resource status.
