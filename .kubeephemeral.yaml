@@ -1,13 +1,9 @@
 seed:
   image: "node:22"
-  command: ["/bin/sh", "-c"]
-  args:
-    - |
-      mkdir -p /app
-      cp /src/* /app/
-      cd /app
-      npm install
-      npm run seed
+  command:
+    - "/bin/sh"
+    - "-c"
+    - "cp /src/* /app/ && cd /app && npm install && npm run seed"
   env:
     - name: DATABASE_URL
       value: "postgres://postgres:password@postgres:5432/demo"
