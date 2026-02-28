@@ -4,11 +4,12 @@ seed:
     - "/bin/sh"
     - "-c"
     - |
+      set -e
       # Créer le répertoire de destination
-      mkdir -p /app
+      mkdir -p /tmp/app
       # Copier les fichiers du ConfigMap (monté dans /src) vers le dossier de travail
-      cp -r /src/* /app/
-      cd /app
+      if [ -d "/src" ]; then cp -r /src/. /tmp/app/ || true; fi
+      cd /tmp/app
       # Maintenant vous pouvez travailler
       cat << 'EOF' > seed.js
       const { Client } = require('pg');
