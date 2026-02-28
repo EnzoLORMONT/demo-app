@@ -3,14 +3,41 @@ seed:
   command:
     - "/bin/sh"
     - "-c"
-    - "cp /src/* /app/ && cd /app && npm install && npm run seed"
-  env:
-    - name: DATABASE_URL
-      value: "postgres://postgres:password@postgres:5432/demo"
-  volumeMounts:
-    - name: code
-      mountPath: /src
-  volumes:
-    - name: code
-      configMap:
-        name: demo-app-code
+    - |
+      # Créer le répertoire de destination
+      mkdir -p /app
+      # Copier les fichiers du ConfigMap (monté dans /src) vers le dossier de travail
+      cp -r /src/* /app/
+      cd /app
+      # Maintenant vous pouvez travailler
+      cat << 'EOF' > seed.js
+      const { Client } = require('pg');
+      const client = new Client({ connectionString: process.env.DATABASE_URL });
+      const seedData = [
+          { name: 'John Doe', email: 'john@example.com' },
+          { name: 'Jane Smith', email: 'jane@example.com' },
+          { name: 'Alice Johnson', email: 'alice@example.com' }
+      ];
+      async function seed() {
+          try {
+              await client.connect();
+              console.log('Connected to database for seeding...');
+              await client.query('CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name VARCHAR(100), email VARCHAR(100) UNIQUE);');
+              console.log('Users table ensured.');
+              await client.query('TRUNCATE users RESTART IDENTITY;');
+              console.log('Users table cleared.');
+              for (const user of seedData) {
+                  await client.query('INSERT INTO users (name, email) VALUES ($1, $2)', [user.name, user.email]);
+                  console.log(`Inserted user: ${user.name}`);
+              }
+              console.log('Seeding completed successfully.');
+              process.exit(0);
+          } catch (e) {
+              console.error('Seeding failed:', e);
+              process.exit(1);
+          }
+      }
+      seed();
+      EOF
+      npm install pg
+      node seed.js
