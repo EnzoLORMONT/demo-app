@@ -13,7 +13,7 @@ seed:
       # Maintenant vous pouvez travailler
       cat << 'EOF' > seed.js
       const { Client } = require('pg');
-      const client = new Client({ connectionString: postgres://postgres:password@postgres:5432/demo });
+      const client = new Client({ connectionString: "postgres://postgres:password@postgres:5432/demo" });
       const seedData = [
           { name: 'John Doe', email: 'john@example.com' },
           { name: 'Jane Smith', email: 'jane@example.com' },
