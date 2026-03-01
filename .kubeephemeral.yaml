@@ -1,5 +1,8 @@
 seed:
   image: "node:22"
+  env:
+    - name: DATABASE_URL
+      value: "postgres://postgres:password@postgres:5432/demo"
   command:
     - "/bin/sh"
     - "-c"
@@ -10,8 +13,6 @@ seed:
       # Copier les fichiers du ConfigMap (monté dans /src) vers le dossier de travail
       if [ -d "/src" ]; then cp -r /src/. /tmp/app/ || true; fi
       cd /tmp/app
-      # Initialiser l'URL de la base de données
-      export DATABASE_URL=postgres://postgres:password@postgres:5432/demo
       # Maintenant vous pouvez travailler
       cat << 'EOF' > seed.js
       const { Client } = require('pg');
